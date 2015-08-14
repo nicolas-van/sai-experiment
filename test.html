@@ -23,8 +23,10 @@
             attack: 0.05,
             sustain: 0.3,
             release: 0.1,
-            gain: 1,
+            gain: 0.3,
             noise: 0,
+            delay: 0.5,
+            delayTime: 0.3,
         };
         var t = new sai.Track(audioCtx, instrument);
         t.output.connect(audioCtx.destination);
@@ -32,7 +34,7 @@
             notes: [],
         };
         var x = 0;
-        var step = 0.5;
+        var step = 1;
         for (var i = 0; i < 1; i ++) {
             song.notes.push([x, 69]);
             x += step;

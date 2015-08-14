@@ -92,7 +92,20 @@ sai.Track = function(audioCtx, instrument) {
     
     this.input = audioCtx.createGain();
     
-    this.output = this.input;
+    var delayGain = this.audioCtx.createGain();
+    delayGain.gain.value = instrument.delay;
+    this.input.connect(delayGain);
+
+    var delay = this.audioCtx.createDelay();
+    delay.delayTime.value = instrument.delayTime;
+    delayGain.connect(delay);
+    delay.connect(delayGain);
+
+    var mixer = this.audioCtx.createGain();
+    this.input.connect(mixer);
+    delay.connect(mixer);
+    
+    this.output = mixer;
 };
 sai.Track.prototype.playNote = function(note, when, endCallback) {
     when = when || this.audioCtx.currentTime;
