@@ -31,12 +31,12 @@
             attack: 0.05,
             sustain: 0.5,
             release: 0.3,
-            gain: 0.1,
+            gain: 0.05,
             noise: 0,
             delay: 0,
             delayTime: 0.3,
-            panAmount: 0,
-            panTime: 0.2,
+            panAmount: 0.5,
+            panFrequency: 2,
         };
         var t = new sai.Track(audioCtx, instrument);
         t.output.connect(audioCtx.destination);

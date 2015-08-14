@@ -105,23 +105,14 @@ sai.Track = function(audioCtx, instrument) {
     
     var pannerNode = this.audioCtx.createStereoPanner();
     last.connect(pannerNode);
-    this.killed = false;
-    var current = audioCtx.currentTime;
-    pannerNode.pan.setValueAtTime(instrument.panAmount, current);
-    current += instrument.panTime;
-    var phase = -1;
-    var calcPan = function() {
-        if (this.killed)
-            return;
-        var orig = current;
-        while (current <= orig + 5) {
-            pannerNode.pan.linearRampToValueAtTime(phase * instrument.panAmount, current);
-            current += instrument.panTime;
-            phase = - phase;
-        }
-        wait(audioCtx, calcPan, current - 2.5);
-    }.bind(this);
-    calcPan();
+    var panOsc = this.audioCtx.createOscillator();
+    this.panOsc = panOsc;
+    panOsc.frequency.value = instrument.panFrequency;
+    var panOscGain = this.audioCtx.createGain();
+    panOscGain.gain.value = instrument.panAmount;
+    panOsc.connect(panOscGain);
+    panOscGain.connect(pannerNode.pan);
+    panOsc.start();
     
     var volumeGain = this.audioCtx.createGain();
     volumeGain.gain.value = instrument.gain;
@@ -150,7 +141,7 @@ sai.Track.prototype.playNote = function(note, when, endCallback) {
     return n;
 };
 sai.Track.prototype.kill = function() {
-    this.killed = true;
+    this.panOsc.stop();
 };
 
 sai.TrackPlayer = function(track, song) {
