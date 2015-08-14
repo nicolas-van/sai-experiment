@@ -21,6 +21,12 @@ function wait(audioCtx, callback, when) {
 };
 sai.wait = wait;
 
+var offCtx = new OfflineAudioContext(1, 44100, 44100);
+var noiseBuffer = offCtx.createBuffer(1, 44100, 44100);
+for (var i = 0; i < noiseBuffer.getChannelData(0).length; i++) {
+    noiseBuffer.getChannelData(0)[i] = Math.random() * 2 - 1;
+}
+
 /*
     A note for unique usage.
 */
@@ -41,6 +47,15 @@ sai.Note = function(audioCtx, instrument, note) {
         sourceGain.connect(this.noteGain);
         this.sources.push(source);
     }.bind(this));
+    
+    var whiteNoise = audioCtx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+    var noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = instrument.noise;
+    whiteNoise.connect(noiseGain);
+    noiseGain.connect(this.noteGain);
+    this.sources.push(whiteNoise);
     
     this.output = this.noteGain;
 };

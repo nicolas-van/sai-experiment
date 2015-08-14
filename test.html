@@ -20,10 +20,11 @@
                     gain: 0,
                 },
             ],
-            attack: 0.1,
-            sustain: 0.1,
-            release: 0.3,
+            attack: 0.05,
+            sustain: 0.3,
+            release: 0.1,
             gain: 1,
+            noise: 0,
         };
         var t = new sai.Track(audioCtx, instrument);
         t.output.connect(audioCtx.destination);
