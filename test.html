@@ -9,14 +9,41 @@
     <script>
     $(function() {
         var audioCtx = new AudioContext();
-        $("button.btna").click(function() {
-        });
-        $("button.btnb").click(function() {
-        });
+        var instrument = {
+            oscillators: [
+                {
+                    type: "sine",
+                    gain: 1,
+                },
+                {
+                    type: "sawtooth",
+                    gain: 0,
+                },
+            ],
+            attack: 0.1,
+            sustain: 0.1,
+            release: 0.3,
+            gain: 1,
+        };
+        var t = new sai.Track(audioCtx, instrument);
+        t.output.connect(audioCtx.destination);
+        var play = function() {
+            var x = audioCtx.currentTime;
+            for (var i = 0; i < 20; i ++) {
+                t.playNote(69, x);
+                x += 1;
+                t.playNote(71, x);
+                x += 1;
+                t.playNote(73, x);
+                x += 1;
+                t.playNote(69, x);
+                x += 1;
+            }
+        };
+        $("button.btna").click(play);
     });
     </script>
 </head>
 <body>
-    <p><button class="btna">Start</button></p>
-    <p><button class="btnb">Stop</button></p>
+    <p><button class="btna">Play</button></p>
 </body>
