@@ -29,7 +29,7 @@ sai.Note = function(audioCtx, instrument, note) {
     this.output = this.noteGain;
 };
 sai.Note.prototype.play = function(when) {
-    var t  = when || this.audioCtx.currentTime;
+    var t  = when;
     var v = this.output.gain;
     v.setValueAtTime(0, t);
     t += this.instrument.attack;

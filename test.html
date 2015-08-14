@@ -28,17 +28,33 @@
         var t = new sai.Track(audioCtx, instrument);
         t.output.connect(audioCtx.destination);
         var play = function() {
-            var x = audioCtx.currentTime;
-            for (var i = 0; i < 20; i ++) {
-                t.playNote(69, x);
+            var song = [];
+            var x = 0;
+            for (var i = 0; i < 1000; i ++) {
+                song.push([x, 69]);
                 x += 1;
-                t.playNote(71, x);
+                song.push([x, 71]);
                 x += 1;
-                t.playNote(73, x);
+                song.push([x, 73]);
                 x += 1;
-                t.playNote(69, x);
+                song.push([x, 69]);
                 x += 1;
-            }
+            };
+            var rb = new Date().getTime() / 1000;
+            var ab = audioCtx.currentTime;
+            var current = 0;
+            var handleNote = function() {
+                if (current >= song.length)
+                    return;
+                var noteTime = ab + song[current][0];
+                t.playNote(song[current][1], noteTime);
+                console.log("scheduling note", song[current][1]);
+                current += 1;
+                var rt = new Date().getTime() / 1000;
+                var noteRealTime = (noteTime - ab) + rb;
+                setTimeout(handleNote, (noteRealTime - rt) * 1000);
+            };
+            handleNote();
         };
         $("button.btna").click(play);
     });
