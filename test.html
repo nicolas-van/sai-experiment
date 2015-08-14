@@ -27,39 +27,36 @@
         };
         var t = new sai.Track(audioCtx, instrument);
         t.output.connect(audioCtx.destination);
+        var song = {
+            notes: [],
+        };
+        var x = 0;
+        var step = 0.5;
+        for (var i = 0; i < 1; i ++) {
+            song.notes.push([x, 69]);
+            x += step;
+            song.notes.push([x, 71]);
+            x += step;
+            song.notes.push([x, 73]);
+            x += step;
+            song.notes.push([x, 69]);
+            x += step;
+        };
+        song.duration = x;
+        var tp = new sai.TrackPlayer(t, song);
         var play = function() {
-            var song = [];
-            var x = 0;
-            for (var i = 0; i < 1000; i ++) {
-                song.push([x, 69]);
-                x += 1;
-                song.push([x, 71]);
-                x += 1;
-                song.push([x, 73]);
-                x += 1;
-                song.push([x, 69]);
-                x += 1;
-            };
-            var rb = new Date().getTime() / 1000;
-            var ab = audioCtx.currentTime;
-            var current = 0;
-            var handleNote = function() {
-                if (current >= song.length)
-                    return;
-                var noteTime = ab + song[current][0];
-                t.playNote(song[current][1], noteTime);
-                console.log("scheduling note", song[current][1]);
-                current += 1;
-                var rt = new Date().getTime() / 1000;
-                var noteRealTime = (noteTime - ab) + rb;
-                setTimeout(handleNote, (noteRealTime - rt) * 1000);
-            };
-            handleNote();
+            stop();
+            tp.playTrack(true);
+        };
+        var stop = function() {
+            tp.stop();
         };
         $("button.btna").click(play);
+        $("button.btnb").click(stop);
     });
     </script>
 </head>
 <body>
     <p><button class="btna">Play</button></p>
+    <p><button class="btnb">Stop</button></p>
 </body>
