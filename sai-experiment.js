@@ -65,9 +65,9 @@ sai.Note.prototype.play = function(when, endCallback) {
     var v = this.output.gain;
     v.setValueAtTime(0, t);
     t += this.instrument.attack;
-    v.linearRampToValueAtTime(this.instrument.gain, t);
+    v.linearRampToValueAtTime(1, t);
     t += this.instrument.sustain;
-    v.setValueAtTime(this.instrument.gain, t);
+    v.setValueAtTime(1, t);
     t += this.instrument.release;
     v.linearRampToValueAtTime(0, t);
     this.sources.forEach(function(source) {
@@ -123,9 +123,13 @@ sai.Track = function(audioCtx, instrument) {
     }.bind(this);
     calcPan();
     
+    var volumeGain = this.audioCtx.createGain();
+    volumeGain.gain.value = instrument.gain;
+    pannerNode.connect(volumeGain);
+    
     var delayGain = this.audioCtx.createGain();
     delayGain.gain.value = instrument.delay;
-    pannerNode.connect(delayGain);
+    volumeGain.connect(delayGain);
 
     var delay = this.audioCtx.createDelay();
     delay.delayTime.value = instrument.delayTime;
@@ -133,7 +137,7 @@ sai.Track = function(audioCtx, instrument) {
     delay.connect(delayGain);
 
     var mixer = this.audioCtx.createGain();
-    pannerNode.connect(mixer);
+    volumeGain.connect(mixer);
     delay.connect(mixer);
     
     this.output = mixer;
