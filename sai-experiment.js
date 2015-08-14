@@ -93,13 +93,13 @@ sai.TrackPlayer = function(track, song) {
     this.state = "stopped";
     this.job = {};
 };
-sai.TrackPlayer.prototype.playTrack = function(repeat) {
+sai.TrackPlayer.prototype.playTrack = function(repeat, when) {
     if (this.state !== "stopped")
         return;
     this.state = "playing";
     var job = {};
     this.job = job;
-    var begin = this.track.audioCtx.currentTime;
+    var begin = when || this.track.audioCtx.currentTime;
     var current = 0;
     var notes = this.song.notes;
     var handleNote = function() {
