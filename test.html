@@ -14,10 +14,11 @@
                 {
                     type: "sine",
                     gain: 1,
-                },
-                {
-                    type: "sawtooth",
-                    gain: 0,
+                    freqOsc: {
+                        type: "sine",
+                        amount: 255 * 100,
+                        frequency: Math.pow(2, 8 - 8),
+                    },
                 },
             ],
             filters: [
@@ -29,13 +30,13 @@
                 },*/
             ],
             attack: 0.05,
-            sustain: 0.5,
-            release: 0.3,
-            gain: 0.05,
+            sustain: 0.2,
+            release: 0.1,
+            gain: 0.2,
             noise: 0,
             delay: 0,
             delayTime: 0.3,
-            panAmount: 0.5,
+            panAmount: 0,
             panFrequency: 2,
         };
         var t = new sai.Track(audioCtx, instrument);

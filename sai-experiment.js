@@ -46,6 +46,16 @@ sai.Note = function(audioCtx, instrument, note) {
         source.connect(sourceGain);
         sourceGain.connect(this.noteGain);
         this.sources.push(source);
+        if (oscillator.freqOsc) {
+            var fOsc = audioCtx.createOscillator();
+            var fOscGain = audioCtx.createGain();
+            fOsc.connect(fOscGain);
+            fOsc.type = oscillator.freqOsc.type;
+            fOsc.frequency.value = oscillator.freqOsc.frequency;
+            fOscGain.gain.value = oscillator.freqOsc.amount;
+            fOscGain.connect(source.frequency);
+            this.sources.push(fOsc);
+        }
     }.bind(this));
     
     var whiteNoise = audioCtx.createBufferSource();
