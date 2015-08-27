@@ -52,7 +52,7 @@ sai.Note = function(audioCtx, instrument, note) {
             fOsc.connect(fOscGain);
             fOsc.type = oscillator.freqOsc.type;
             fOsc.frequency.value = oscillator.freqOsc.frequency;
-            fOscGain.gain.value = oscillator.freqOsc.amount;
+            fOscGain.gain.value = midiToFrequency(note) * oscillator.freqOsc.amount;
             fOscGain.connect(source.frequency);
             this.sources.push(fOsc);
         }
