@@ -118,7 +118,20 @@ sai.Track = function(audioCtx, instrument) {
     
     this.input = audioCtx.createGain();
     
+    var nodes = [this.input];
+    instrument.filters.forEach(function(filter) {
+        var node = audioCtx.createBiquadFilter();
+        node.type = filter.type;
+        node.frequency.value = filter.frequency;
+        node.gain.value = filter.gain;
+        nodes[nodes.length - 1].connect(node);
+        nodes.push(node);
+    });
+    this.lastFilter = nodes[nodes.length - 1];
+    this.filters = nodes.slice(1);
+    
     this.pannerNode = this.audioCtx.createStereoPanner();
+    this.lastFilter.connect(this.pannerNode);
     this.panOsc = this.audioCtx.createOscillator();
     this.panOscGain = this.audioCtx.createGain();
     this.panOsc.connect(this.panOscGain);
@@ -145,22 +158,13 @@ sai.Track = function(audioCtx, instrument) {
 };
 sai.Track.prototype.setInstrument = function(instrument) {
     this.instrument = instrument;
-    this.input.disconnect();
-    if (this.filter)
-        this.filter.disconnect();
-    
-    var nodes = [this.input];
-    instrument.filters.forEach(function(filter) {
-        var node = audioCtx.createBiquadFilter();
-        node.type = filter.type;
-        node.frequency.value = filter.frequency;
-        node.gain.value = filter.gain;
-        nodes[nodes.length - 1].connect(node);
-        nodes.push(node);
-    });
-    this.filter = nodes[nodes.length - 1];
-
-    this.filter.connect(this.pannerNode);
+    for (var i = 0; i < this.filters.length && i < instrument.filters.length; i++) {
+        if (i >= instrument.filters.length)
+            return;
+        this.filters[i].frequency.value = instrument.filters[i].frequency;
+        this.filters[i].gain.value = instrument.filters[i].gain;
+        this.filters[i].Q.value = instrument.filters[i].q;
+    }
     this.panOsc.frequency.value = instrument.panFrequency;
     this.panOscGain.gain.value = instrument.panAmount;
     this.volumeGain.gain.value = instrument.gain;
