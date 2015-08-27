@@ -69,7 +69,9 @@ sai.Note = function(audioCtx, instrument, note) {
     
     this.output = this.noteGain;
 };
-sai.Note.prototype.play = function(when, endCallback) {
+sai.Note.prototype.play = function(when, setEnd, endCallback) {
+    when = when || this.audioCtx.currentTime;
+    setEnd = setEnd === undefined ? true : setEnd;
     this.when = when;
     var t  = when;
     var v = this.output.gain;
@@ -78,17 +80,27 @@ sai.Note.prototype.play = function(when, endCallback) {
     v.linearRampToValueAtTime(1, t);
     t += this.instrument.decay;
     v.linearRampToValueAtTime(this.instrument.sustainLevel, t);
-    t += this.instrument.sustainTime;
-    v.setValueAtTime(this.instrument.sustainLevel, t);
-    t += this.instrument.release;
-    v.linearRampToValueAtTime(0, t);
+    this.decayEnd = t;
+    this.endCallback = endCallback;
+    if (setEnd) {
+        this.end(t + this.instrument.sustainTime);
+    }
     this.sources.forEach(function(source) {
         source.start();
     }.bind(this));
+};
+sai.Note.prototype.end = function(when) {
+    when = when || this.audioCtx.currentTime;
+    when = Math.max(when, this.decayEnd);
+    var t = when;
+    var v = this.output.gain;
+    v.setValueAtTime(this.instrument.sustainLevel, t);
+    t += this.instrument.release;
+    v.linearRampToValueAtTime(0, t);
     wait(this.audioCtx, function() {
         this.kill();
-        if (endCallback)
-            endCallback();
+        if (this.endCallback)
+            this.endCallback();
     }.bind(this), t);
 };
 sai.Note.prototype.kill = function() {
@@ -145,11 +157,12 @@ sai.Track = function(audioCtx, instrument) {
     
     this.output = mixer;
 };
-sai.Track.prototype.playNote = function(note, when, endCallback) {
+sai.Track.prototype.playNote = function(note, when, setEnd, endCallback) {
     when = when || this.audioCtx.currentTime;
+    setEnd = setEnd === undefined ? true : setEnd;
     var n = new sai.Note(this.audioCtx, this.instrument, note);
     n.output.connect(this.input);
-    n.play(when, endCallback);
+    n.play(when, setEnd, endCallback);
     return n;
 };
 sai.Track.prototype.kill = function() {
