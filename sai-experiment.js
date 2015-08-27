@@ -115,9 +115,39 @@ sai.Note.prototype.kill = function() {
 
 sai.Track = function(audioCtx, instrument) {
     this.audioCtx = audioCtx;
-    this.instrument = instrument;
     
     this.input = audioCtx.createGain();
+    
+    this.pannerNode = this.audioCtx.createStereoPanner();
+    this.panOsc = this.audioCtx.createOscillator();
+    this.panOscGain = this.audioCtx.createGain();
+    this.panOsc.connect(this.panOscGain);
+    this.panOscGain.connect(this.pannerNode.pan);
+    this.panOsc.start();
+    
+    this.volumeGain = this.audioCtx.createGain();
+    this.pannerNode.connect(this.volumeGain);
+    
+    this.delayGain = this.audioCtx.createGain();
+    this.volumeGain.connect(this.delayGain);
+
+    this.delay = this.audioCtx.createDelay();
+    this.delayGain.connect(this.delay);
+    this.delay.connect(this.delayGain);
+
+    this.mixer = this.audioCtx.createGain();
+    this.volumeGain.connect(this.mixer);
+    this.delay.connect(this.mixer);
+    
+    this.output = this.mixer;
+
+    this.setInstrument(instrument);
+};
+sai.Track.prototype.setInstrument = function(instrument) {
+    this.instrument = instrument;
+    this.input.disconnect();
+    if (this.filter)
+        this.filter.disconnect();
     
     var nodes = [this.input];
     instrument.filters.forEach(function(filter) {
@@ -128,37 +158,14 @@ sai.Track = function(audioCtx, instrument) {
         nodes[nodes.length - 1].connect(node);
         nodes.push(node);
     });
-    var last = nodes[nodes.length - 1];
-    
-    var pannerNode = this.audioCtx.createStereoPanner();
-    last.connect(pannerNode);
-    var panOsc = this.audioCtx.createOscillator();
-    this.panOsc = panOsc;
-    panOsc.frequency.value = instrument.panFrequency;
-    var panOscGain = this.audioCtx.createGain();
-    panOscGain.gain.value = instrument.panAmount;
-    panOsc.connect(panOscGain);
-    panOscGain.connect(pannerNode.pan);
-    panOsc.start();
-    
-    var volumeGain = this.audioCtx.createGain();
-    volumeGain.gain.value = instrument.gain;
-    pannerNode.connect(volumeGain);
-    
-    var delayGain = this.audioCtx.createGain();
-    delayGain.gain.value = instrument.delay;
-    volumeGain.connect(delayGain);
+    this.filter = nodes[nodes.length - 1];
 
-    var delay = this.audioCtx.createDelay();
-    delay.delayTime.value = instrument.delayTime;
-    delayGain.connect(delay);
-    delay.connect(delayGain);
-
-    var mixer = this.audioCtx.createGain();
-    volumeGain.connect(mixer);
-    delay.connect(mixer);
-    
-    this.output = mixer;
+    this.filter.connect(this.pannerNode);
+    this.panOsc.frequency.value = instrument.panFrequency;
+    this.panOscGain.gain.value = instrument.panAmount;
+    this.volumeGain.gain.value = instrument.gain;
+    this.delayGain.gain.value = instrument.delay;
+    this.delay.delayTime.value = instrument.delayTime;
 };
 sai.Track.prototype.playNote = function(note, when, setEnd, endCallback) {
     when = when || this.audioCtx.currentTime;
