@@ -90,6 +90,9 @@ sai.Note.prototype.play = function(when, setEnd, endCallback) {
     }.bind(this));
 };
 sai.Note.prototype.end = function(when) {
+    if (this.ended)
+        return;
+    this.ended = true;
     when = when || this.audioCtx.currentTime;
     when = Math.max(when, this.decayEnd);
     var t = when;
