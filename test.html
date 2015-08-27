@@ -16,8 +16,8 @@
                     gain: 1,
                     freqOsc: {
                         type: "sine",
-                        amount: 255 * 100,
-                        frequency: Math.pow(2, 8 - 8),
+                        amount: 0,
+                        frequency: 10,
                     },
                 },
             ],
@@ -30,9 +30,12 @@
                 },*/
             ],
             attack: 0.05,
-            sustain: 0.2,
+            decay: 0.05,
+            sustainLevel: 0.5,
+            sustainTime: 0.2,
             release: 0.1,
             gain: 0.2,
+
             noise: 0,
             delay: 0,
             delayTime: 0.3,

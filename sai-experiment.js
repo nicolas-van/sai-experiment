@@ -76,8 +76,10 @@ sai.Note.prototype.play = function(when, endCallback) {
     v.setValueAtTime(0, t);
     t += this.instrument.attack;
     v.linearRampToValueAtTime(1, t);
-    t += this.instrument.sustain;
-    v.setValueAtTime(1, t);
+    t += this.instrument.decay;
+    v.linearRampToValueAtTime(this.instrument.sustainLevel, t);
+    t += this.instrument.sustainTime;
+    v.setValueAtTime(this.instrument.sustainLevel, t);
     t += this.instrument.release;
     v.linearRampToValueAtTime(0, t);
     this.sources.forEach(function(source) {
