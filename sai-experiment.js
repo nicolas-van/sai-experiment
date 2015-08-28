@@ -59,8 +59,8 @@ sai.Note = function(audioCtx, instrument, note) {
             noiseFilter.type = "bandpass";
             noiseFilter.frequency.value = midiToFrequency(note);
             whiteNoise.connect(noiseFilter);
-            // compensation of gain to make it more audible
-            sourceGain.gain.value += (( -(note - 69)) / (12 * 4.5));
+            // compensation of gain to make it more audible on low notes
+            sourceGain.gain.value *= 1 + (( -(note - 69)) / (12 * 4));
             noiseFilter.connect(sourceGain);
             if (fOsc)
                 fOscGain.connect(noiseFilter.frequency);
