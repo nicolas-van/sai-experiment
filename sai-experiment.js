@@ -61,9 +61,13 @@ sai.Note = function(audioCtx, instrument, note) {
     var whiteNoise = audioCtx.createBufferSource();
     whiteNoise.buffer = noiseBuffer;
     whiteNoise.loop = true;
+    var noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = "lowpass";
+    noiseFilter.frequency.value = midiToFrequency(note);
+    whiteNoise.connect(noiseFilter);
     var noiseGain = audioCtx.createGain();
     noiseGain.gain.value = instrument.noise;
-    whiteNoise.connect(noiseGain);
+    noiseFilter.connect(noiseGain);
     noiseGain.connect(this.noteGain);
     this.sources.push(whiteNoise);
     
@@ -122,8 +126,6 @@ sai.Track = function(audioCtx, instrument) {
     instrument.filters.forEach(function(filter) {
         var node = audioCtx.createBiquadFilter();
         node.type = filter.type;
-        node.frequency.value = filter.frequency;
-        node.gain.value = filter.gain;
         nodes[nodes.length - 1].connect(node);
         nodes.push(node);
     });
