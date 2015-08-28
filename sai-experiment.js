@@ -38,14 +38,10 @@ sai.Note = function(audioCtx, instrument, note) {
     
     this.sources = [];
     instrument.oscillators.forEach(function(oscillator) {
-        var source = audioCtx.createOscillator();
-        source.type = oscillator.type;
-        source.frequency.value = midiToFrequency(note);
         var sourceGain = audioCtx.createGain();
         sourceGain.gain.value = oscillator.gain;
-        source.connect(sourceGain);
         sourceGain.connect(this.noteGain);
-        this.sources.push(source);
+        var fOsc, fOscGain = null;
         if (oscillator.freqOsc) {
             var fOsc = audioCtx.createOscillator();
             var fOscGain = audioCtx.createGain();
@@ -53,23 +49,32 @@ sai.Note = function(audioCtx, instrument, note) {
             fOsc.type = oscillator.freqOsc.type;
             fOsc.frequency.value = oscillator.freqOsc.frequency;
             fOscGain.gain.value = midiToFrequency(note) * oscillator.freqOsc.amount;
-            fOscGain.connect(source.frequency);
             this.sources.push(fOsc);
         }
+        if (oscillator.type === "noise") {
+            var whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            whiteNoise.loop = true;    
+            var noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = "bandpass";
+            noiseFilter.frequency.value = midiToFrequency(note);
+            whiteNoise.connect(noiseFilter);
+            // compensation of gain to make it more audible
+            sourceGain.gain.value += (( -(note - 69)) / (12 * 4.5));
+            noiseFilter.connect(sourceGain);
+            if (fOsc)
+                fOscGain.connect(noiseFilter.frequency);
+            this.sources.push(whiteNoise);
+        } else {
+            var source = audioCtx.createOscillator();
+            source.type = oscillator.type;
+            source.frequency.value = midiToFrequency(note);
+            source.connect(sourceGain);
+            if (fOsc)
+                fOscGain.connect(source.frequency);
+            this.sources.push(source);
+        }
     }.bind(this));
-    
-    var whiteNoise = audioCtx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
-    whiteNoise.loop = true;
-    var noiseFilter = audioCtx.createBiquadFilter();
-    noiseFilter.type = "lowpass";
-    noiseFilter.frequency.value = midiToFrequency(note);
-    whiteNoise.connect(noiseFilter);
-    var noiseGain = audioCtx.createGain();
-    noiseGain.gain.value = instrument.noise;
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(this.noteGain);
-    this.sources.push(whiteNoise);
     
     this.output = this.noteGain;
 };
