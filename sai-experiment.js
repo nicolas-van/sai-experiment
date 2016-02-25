@@ -226,7 +226,7 @@ sai.TrackPlayer.prototype.playTrack = function(repeat, when) {
             if (job.stopping)
                 return;
             this.state = "stopped";
-        }.bind(this), ab + this.song.duration);
+        }.bind(this), begin + this.song.duration);
 };
 sai.TrackPlayer.prototype.stop = function() {
     if (this.job.lastNote)
