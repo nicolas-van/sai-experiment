@@ -45,18 +45,18 @@ sai.BaseNode = class BaseNode {
 /*
     A note for unique usage.
 */
-sai.Note = class Note extends sai.BaseNode {
+sai.Voice = class Voice extends sai.BaseNode {
     constructor(context, instrument, note) {
         super(context);
         this.instrument = instrument;
-        this.noteGain = context.createGain();
-        this.noteGain.gain.value = 0;
+        this.voiceGain = context.createGain();
+        this.voiceGain.gain.value = 0;
         
         this.sources = [];
         instrument.oscillators.forEach(function(oscillator) {
             var sourceGain = context.createGain();
             sourceGain.gain.value = oscillator.gain;
-            sourceGain.connect(this.noteGain);
+            sourceGain.connect(this.voiceGain);
             var fOsc, fOscGain = null;
             if (oscillator.freqOsc) {
                 var fOsc = context.createOscillator();
@@ -92,7 +92,7 @@ sai.Note = class Note extends sai.BaseNode {
             }
         }.bind(this));
         
-        this.output = this.noteGain;
+        this.output = this.voiceGain;
     }
     play(when, setEnd, endCallback) {
         when = when || this.context.currentTime;
@@ -192,7 +192,7 @@ sai.Track = class Track extends sai.BaseNode {
     playNote(note, when, setEnd, endCallback) {
         when = when || this.context.currentTime;
         setEnd = setEnd === undefined ? true : setEnd;
-        var n = new sai.Note(this.context, this.instrument, note);
+        var n = new sai.Voice(this.context, this.instrument, note);
         n.connect(this._input);
         n.play(when, setEnd, endCallback);
         return n;
