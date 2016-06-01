@@ -166,18 +166,11 @@ sai.Track = class Track extends sai.BaseNode {
         this.volumeGain = this.context.createGain();
         this.pannerNode.connect(this.volumeGain);
         
-        this.delayGain = this.context.createGain();
-        this.volumeGain.connect(this.delayGain);
-
-        this.delay = this.context.createDelay();
-        this.delayGain.connect(this.delay);
-        this.delay.connect(this.delayGain);
-
-        this.mixer = this.context.createGain();
-        this.volumeGain.connect(this.mixer);
-        this.delay.connect(this.mixer);
+        this.delay = new sai.Delay(this.context);
+        this.volumeGain.connect(this.delay.input);
         
-        this.output = this.mixer;
+        this.output = this.context.createGain();
+        this.delay.connect(this.output);
 
         this.setInstrument(instrument);
     }
@@ -193,8 +186,8 @@ sai.Track = class Track extends sai.BaseNode {
         this.panOsc.frequency.value = instrument.panFrequency;
         this.panOscGain.gain.value = instrument.panAmount;
         this.volumeGain.gain.value = instrument.gain;
-        this.delayGain.gain.value = instrument.delay;
-        this.delay.delayTime.value = instrument.delayTime;
+        this.delay.gain = instrument.delay;
+        this.delay.delayTime = instrument.delayTime;
     }
     playNote(note, when, setEnd, endCallback) {
         when = when || this.context.currentTime;
@@ -206,6 +199,36 @@ sai.Track = class Track extends sai.BaseNode {
     }
     kill() {
         this.panOsc.stop();
+    }
+}
+
+sai.Delay = class Delay extends sai.BaseNode {
+    constructor(context) {
+        super(context);
+        this.input = this.context.createGain();
+        
+        this.delayGain = this.context.createGain();
+        this.input.connect(this.delayGain);
+
+        this.delay = this.context.createDelay();
+        this.delayGain.connect(this.delay);
+        this.delay.connect(this.delayGain);
+        
+        this.output = this.context.createGain();
+        this.delay.connect(this.output);
+        this.input.connect(this.output);
+    }
+    get gain() {
+        return this.delayGain.gain.value;
+    }
+    set gain(val) {
+        this.delayGain.gain.value = val;
+    }
+    get delayTime() {
+        return this.delay.delayTime.value;
+    }
+    set delayTime(val) {
+        this.delay.delayTime.value = val;
     }
 }
 
