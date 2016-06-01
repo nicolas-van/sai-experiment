@@ -34,6 +34,12 @@ sai.BaseNode = class BaseNode {
     get context() {
         return this._context;
     }
+    connect(target) {
+        this.output.connect(target);
+    }
+    disconnect(target) {
+        this.output.disconnect(target);
+    }
 }
 
 /*
@@ -137,9 +143,9 @@ sai.Track = class Track extends sai.BaseNode {
     constructor(context, instrument) {
         super(context);
         
-        this.input = context.createGain();
+        this._input = context.createGain();
         
-        var nodes = [this.input];
+        var nodes = [this._input];
         instrument.filters.forEach(function(filter) {
             var node = context.createBiquadFilter();
             node.type = filter.type;
@@ -194,59 +200,12 @@ sai.Track = class Track extends sai.BaseNode {
         when = when || this.context.currentTime;
         setEnd = setEnd === undefined ? true : setEnd;
         var n = new sai.Note(this.context, this.instrument, note);
-        n.output.connect(this.input);
+        n.connect(this._input);
         n.play(when, setEnd, endCallback);
         return n;
     }
     kill() {
         this.panOsc.stop();
-    }
-}
-
-sai.TrackPlayer = class TrackPlayer {
-    constructor(track, song) {
-        this.track = track;
-        this.song = song;
-        this.state = "stopped";
-        this.job = {};
-    }
-    playTrack(repeat, when) {
-        if (this.state !== "stopped")
-            return;
-        this.state = "playing";
-        var job = {};
-        this.job = job;
-        var begin = when || this.track.context.currentTime;
-        var current = 0;
-        var notes = this.song.notes;
-        var handleNote = function() {
-            if (job.stopping)
-                return;
-            if (current >= notes.length) {
-                if (repeat) {
-                    current = 0;
-                    begin = begin + this.song.duration;
-                } else
-                    return;
-            }
-            var noteTime = begin + notes[current][0];
-            job.lastNote = this.track.playNote(notes[current][1], noteTime);
-            current += 1;
-            wait(this.track.context, handleNote, noteTime);
-        }.bind(this);
-        handleNote();
-        if (! repeat)
-            wait(this.track.context, function() {
-                if (job.stopping)
-                    return;
-                this.state = "stopped";
-            }.bind(this), begin + this.song.duration);
-    }
-    stop() {
-        if (this.job.lastNote)
-            this.job.lastNote.kill();
-        this.job.stopping = true;
-        this.state = "stopped";
     }
 }
 
