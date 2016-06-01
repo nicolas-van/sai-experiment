@@ -44,36 +44,46 @@
         };
         var t = new sai.Track(audioCtx, instrument);
         t.output.connect(audioCtx.destination);
-        var song = {
-            notes: [],
+        
+        console.log("trying to get midi access");
+        window.navigator.requestMIDIAccess().then(function(midiAccess) {
+            console.log("midi access granted");
+            var inputs = midiAccess.inputs.values();
+            for (var input = inputs.next(); input && ! input.done; input = inputs.next()) {
+                input.value.onmidimessage = receiveMessage;
+            }
+        });
+        
+        var notes = {};
+        
+        var receiveMessage = function(message) {
+            console.log(message);
+            var data = message.data;
+            var info = {
+                cmd: data[0] >> 4,
+                channel: data[0] & 0xf,
+                type: data[0] & 0xf0,
+                note: data[1],
+                velocity: data[2],
+            };
+            
+            if (info.type === 144) {
+                if (notes[info.note]) {
+                    info.note.end();
+                }
+                notes[info.note] = t.playNote(info.note, null, false);
+            } else if (info.type === 128) {
+                if (notes[info.note]) {
+                    notes[info.note].end();
+                    notes[info.note] = undefined;
+                }
+            }
         };
-        var x = 0;
-        var step = 0.5;
-        for (var i = 0; i < 1; i ++) {
-            song.notes.push([x, 69]);
-            x += step;
-            song.notes.push([x, 71]);
-            x += step;
-            song.notes.push([x, 73]);
-            x += step;
-            song.notes.push([x, 69]);
-            x += step;
-        };
-        song.duration = x;
-        var tp = new sai.TrackPlayer(t, song);
-        var play = function() {
-            stop();
-            tp.playTrack(false);
-        };
-        var stop = function() {
-            tp.stop();
-        };
-        $("button.btna").click(play);
-        $("button.btnb").click(stop);
+        
+        var x = `hello`;
     });
     </script>
 </head>
 <body>
-    <p><button class="btna">Play</button></p>
-    <p><button class="btnb">Stop</button></p>
+    Play with a midi keyboard !
 </body>
