@@ -190,26 +190,58 @@ sai.Track = class Track extends sai.BaseNode {
         this.osc2Type = "sine";
         this.osc2Gain = 1;
         this.gain = 1;
+        this._sustain = false;
+        this._sustained = {};
     }
     midiMessage(message) {
         if (message.cmd === sai.MidiMessage.commands.noteOn) {
-            if (this._voices[message.note])
-                return;
-            var voice = new sai.Voice(this.context);
-            this._voices[message.note] = voice;
-            voice.note = message.note;
-            voice.osc1Type = this.osc1Type;
-            voice.osc2Type = this.osc2Type;
-            voice.osc1Gain.value = this.osc1Gain;
-            voice.osc2Gain.value = this.osc2Gain;
-            voice.velocity.value = message.velocity / 127;
-            voice.connect(this._mixer);
-            voice.start();
+            this._noteOn(message);
         } else if (message.cmd === sai.MidiMessage.commands.noteOff) {
-            if (! this._voices[message.note])
-                return;
-            this._voices[message.note].stop();
+            this._noteOff(message);
+        } else if (message.cmd === sai.MidiMessage.commands.controlChange) {
+            if (message.note === sai.MidiMessage.controls.sustain) {
+                this._sustainChange(message);
+            }
+        }
+    }
+    _noteOn(message) {
+        if (this._voices[message.note]) {
+            this._noteOff(message, true);
+        }
+        var voice = new sai.Voice(this.context);
+        this._voices[message.note] = voice;
+        delete this._sustained[message.note];
+        voice.note = message.note;
+        voice.osc1Type = this.osc1Type;
+        voice.osc2Type = this.osc2Type;
+        voice.osc1Gain.value = this.osc1Gain;
+        voice.osc2Gain.value = this.osc2Gain;
+        voice.velocity.value = message.velocity / 127;
+        voice.connect(this._mixer);
+        voice.start();
+    }
+    _noteOff(message, force) {
+        if (! this._voices[message.note])
+            return;
+        if (! this._sustain || force) {
+            var voice = this._voices[message.note];
+            voice.stop();
             delete this._voices[message.note];
+        } else {
+            this._sustained[message.note] = true;
+        }
+    }
+    _sustainChange(message) {
+        this._sustain = message.velocity === 0 ? false : true;
+        if (! this._sustain) {
+            _.each(this._sustained, function(val, key) {
+                if (this._voices[key]) {
+                    var mes = new sai.MidiMessage();
+                    mes.note = key;
+                    this._noteOff(mes);
+                }
+            }.bind(this));
+            this._sustained = {};
         }
     }
     get osc1Type() {
@@ -364,6 +396,10 @@ sai.MidiMessage.commands = {
     programChange: 0xC,
     channelPressure: 0xD,
     pitchBendChange: 0xE,
+};
+
+sai.MidiMessage.controls = {
+    sustain: 64,
 };
 
 })();
