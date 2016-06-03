@@ -265,7 +265,7 @@ sai.Track = class Track extends sai.BaseNode {
     }
     _pitchBendChange(message) {
         var max = Math.pow(2, 14) - 1;
-        this._pitchBend = ((message.pitchBend / max) * 2) - 1;
+        this._pitchBend = Math.round((((message.pitchBend / max) * 2) - 1) * 1000) / 1000;
         _.each(this._voices, (v) => v.detune = this._pitchBend * this._pitchBendMaxAmount);
     }
     get osc1Type() {
