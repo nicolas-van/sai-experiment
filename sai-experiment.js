@@ -125,18 +125,17 @@ sai.Voice = class Voice extends sai.BaseNode {
         this._note = val;
         this._updateFrequency();
     }
-    // detune : 1 = 1 octave
+    // detune : 1 = 1 semi-tone
     get detune() {
         return this._detune;
     }
     set detune(val) {
-        console.log(val);
         this._detune = val;
         this._updateFrequency();
     }
     _updateFrequency() {
         var base = midiToFrequency(this.note);
-        var val = base * (1 + this.detune);
+        var val = base * Math.pow(Math.pow(2, 1/12), this.detune);
         this.osc1.frequency.value = val;
         this.osc2.frequency.value = val;
     }
@@ -208,6 +207,7 @@ sai.Track = class Track extends sai.BaseNode {
         this._sustain = false;
         this._sustained = {};
         this._pitchBend = 0;
+        this._pitchBendMaxAmount = 2;
     }
     midiMessage(message) {
         if (message.cmd === sai.MidiMessage.commands.noteOn) {
@@ -235,7 +235,7 @@ sai.Track = class Track extends sai.BaseNode {
         voice.osc1Gain.value = this.osc1Gain;
         voice.osc2Gain.value = this.osc2Gain;
         voice.velocity.value = message.velocity / 127;
-        voice.detune = this._pitchBend / 6;
+        voice.detune = this._pitchBend * this._pitchBendMaxAmount;
         voice.connect(this._mixer);
         voice.start();
     }
@@ -266,7 +266,7 @@ sai.Track = class Track extends sai.BaseNode {
     _pitchBendChange(message) {
         var max = Math.pow(2, 14) - 1;
         this._pitchBend = ((message.pitchBend / max) * 2) - 1;
-        _.each(this._voices, (v) => v.detune = this._pitchBend / 6);
+        _.each(this._voices, (v) => v.detune = this._pitchBend * this._pitchBendMaxAmount);
     }
     get osc1Type() {
         return this._osc1Type;
