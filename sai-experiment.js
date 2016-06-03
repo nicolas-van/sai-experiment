@@ -49,10 +49,6 @@ sai.Voice = class Voice extends sai.BaseNode {
     constructor(context) {
         super(context);
         this._note = 69;
-        this.attack = 0.5;
-        this.decay = 0.5;
-        this.sustain = 0.5;
-        this.release = 0.5;
         
         // oscillator 1
         this.osc1 = new sai.Oscillator(context);
@@ -70,9 +66,9 @@ sai.Voice = class Voice extends sai.BaseNode {
         //this.oscMixer.connect(this.filter);
         
         // envelope gain
-        this.envelope = context.createGain();
+        this.envelope = new sai.Envelope(this.context);
         //this.filter.connect(this.envelope);
-        this.oscMixer.connect(this.envelope);
+        this.oscMixer.connect(this.envelope.input);
         
         // main gain
         this.output = context.createGain();
@@ -97,26 +93,22 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.lfo.connect(this.lfoFilterGain);
         this.lfoFilterGain.connect(this.filter.frequency);
         */
+        
+        this.attack = 0.1;
+        this.decay = 0.1;
+        this.sustain = 0.1;
+        this.release = 0.5;
     }
     start(when) {
         when = when || this.context.currentTime;
-        this.startTime = when;
-        var t  = when;
-        this.envelope.gain.setValueAtTime(0, t);
-        t += this.attack;
-        this.envelope.gain.linearRampToValueAtTime(1, t);
-        t += this.decay;
-        this.envelope.gain.linearRampToValueAtTime(this.sustain, t);
+        this.envelope.start(when);
         this.osc1.start(when);
         this.osc2.start(when);
         //this.lfo.start(when);
     }
     stop(when) {
         when = when || this.context.currentTime;
-        var t = when;
-        this.envelope.gain.cancelScheduledValues(t);
-        t += this.release;
-        this.envelope.gain.linearRampToValueAtTime(0, t);
+        var t = this.envelope.stop(when);
         this.osc1.stop(t);
         this.osc2.stop(t);
         //this.lfo.stop(t);
@@ -146,6 +138,30 @@ sai.Voice = class Voice extends sai.BaseNode {
     }
     get osc2Gain() {
         return this.osc2.gain;
+    }
+    get attack() {
+        return this.envelope.attack;
+    }
+    set attack(val) {
+        this.envelope.attack = val;
+    }
+    get decay() {
+        return this.envelope.decay;
+    }
+    set decay(val) {
+        this.envelope.decay = val;
+    }
+    get sustain() {
+        return this.envelope.sustain;
+    }
+    set sustain(val) {
+        this.envelope.sustain = val;
+    }
+    get release() {
+        return this.envelope.release;
+    }
+    set release(val) {
+        this.envelope.release = val;
     }
 }
 
@@ -273,6 +289,49 @@ sai.Oscillator = class Oscillator extends sai.BaseNode {
     }
     get gain() {
         return this.output.gain;
+    }
+}
+
+sai.Envelope = class Envelope extends sai.BaseNode {
+    constructor(context) {
+        super(context);
+        this.input = context.createGain();
+        this.output = this.input;
+        this.input.gain.value = 0;
+        
+        this.attack = 0;
+        this.decay = 0;
+        this.sustain = 1;
+        this.release = 0;
+        this._startTime = null;
+    }
+    start(when) {
+        when = when || this.context.currentTime;
+        this._startTime = when;
+        var t  = when;
+        this.input.gain.setValueAtTime(0, t);
+        t += this.attack;
+        this.input.gain.linearRampToValueAtTime(1, t);
+        t += this.decay;
+        this.input.gain.linearRampToValueAtTime(this.sustain, t);
+        return t;
+    }
+    stop(when) {
+        when = when || this.context.currentTime;
+        var t = when;
+        var value;
+        var rt = t - this._startTime;
+        if (rt < this.attack) {
+            var value = Math.max(0, rt / this.attack);
+        } else if (rt >= this.attack && rt < this.attack + this.decay) {
+            var value = 1 - (((rt - this.attack) / (this.decay)) * (1 - this.sustain));
+        } else {
+            var value = this.sustain;
+        }
+        this.input.gain.setValueAtTime(value, t);
+        t += this.release;
+        this.input.gain.linearRampToValueAtTime(0, t);
+        return t;
     }
 }
 
