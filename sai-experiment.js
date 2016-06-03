@@ -49,6 +49,7 @@ sai.Voice = class Voice extends sai.BaseNode {
     constructor(context) {
         super(context);
         this._note = 69;
+        this._detune = 0;
         
         // oscillator 1
         this.osc1 = new sai.Oscillator(context);
@@ -122,8 +123,22 @@ sai.Voice = class Voice extends sai.BaseNode {
     }
     set note(val) {
         this._note = val;
-        this.osc1.frequency.value = midiToFrequency(val);
-        this.osc2.frequency.value = midiToFrequency(val);
+        this._updateFrequency();
+    }
+    // detune : 1 = 1 octave
+    get detune() {
+        return this._detune;
+    }
+    set detune(val) {
+        console.log(val);
+        this._detune = val;
+        this._updateFrequency();
+    }
+    _updateFrequency() {
+        var base = midiToFrequency(this.note);
+        var val = base * (1 + this.detune);
+        this.osc1.frequency.value = val;
+        this.osc2.frequency.value = val;
     }
     get osc1Type() {
         return this.osc1.type;
@@ -192,6 +207,7 @@ sai.Track = class Track extends sai.BaseNode {
         this.gain = 1;
         this._sustain = false;
         this._sustained = {};
+        this._pitchBend = 0;
     }
     midiMessage(message) {
         if (message.cmd === sai.MidiMessage.commands.noteOn) {
@@ -202,6 +218,8 @@ sai.Track = class Track extends sai.BaseNode {
             if (message.note === sai.MidiMessage.controls.sustain) {
                 this._sustainChange(message);
             }
+        } else if (message.cmd === sai.MidiMessage.commands.pitchBendChange) {
+            this._pitchBendChange(message);
         }
     }
     _noteOn(message) {
@@ -217,6 +235,7 @@ sai.Track = class Track extends sai.BaseNode {
         voice.osc1Gain.value = this.osc1Gain;
         voice.osc2Gain.value = this.osc2Gain;
         voice.velocity.value = message.velocity / 127;
+        voice.detune = this._pitchBend / 6;
         voice.connect(this._mixer);
         voice.start();
     }
@@ -243,6 +262,11 @@ sai.Track = class Track extends sai.BaseNode {
             }.bind(this));
             this._sustained = {};
         }
+    }
+    _pitchBendChange(message) {
+        var max = Math.pow(2, 14) - 1;
+        this._pitchBend = ((message.pitchBend / max) * 2) - 1;
+        _.each(this._voices, (v) => v.detune = this._pitchBend / 6);
     }
     get osc1Type() {
         return this._osc1Type;
@@ -377,14 +401,45 @@ sai.Envelope = class Envelope extends sai.BaseNode {
 
 sai.MidiMessage = class MidiMessage {
     constructor(data) {
-        this.cmd = data ? data[0] >> 4 : 0;
-        this.channel = data ? data[0] & 0xf : 0;
-        this.type = data ? data[0] & 0xf0 : 0;
-        this.note = data ? data[1] : 0;
-        this.velocity = data ? data[2] : 0;
+        this.data = data;
+        if (! data)
+            this.data = new Uint8Array(3);
+    }
+    get cmd() {
+        return this.data[0] >> 4;
+    }
+    set cmd(val) {
+        this.data[0] = (val << 4) | (this.data[0] & 0xf0);
     }
     get cmdString() {
         return _.findKey(sai.MidiMessage.commands, (x) => x === this.cmd);
+    }
+    get channel() {
+        return this.data[0] & 0x0f;
+    }
+    set channel(val) {
+        this.data[0] = (val & 0x0f) | (this.data[0] & 0xf0);
+    }
+    get type() {
+        return this.data[0] & 0xf0;
+    }
+    set type(val) {
+        this.data[0] = (val & 0xf0) | (this.data[0] & 0x0f);
+    }
+    get note() {
+        return this.data[1];
+    }
+    set note(val) {
+        this.data[1] = val;
+    }
+    get velocity() {
+        return this.data[2];
+    }
+    set velocity(val) {
+        this.data[2] = val;
+    }
+    get pitchBend() {
+        return (this.data[2] << 7) + (this.data[1]); 
     }
 }
 
