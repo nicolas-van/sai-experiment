@@ -70,9 +70,13 @@ sai.Voice = class Voice extends sai.BaseNode {
         //this.filter.connect(this.envelope);
         this.oscMixer.connect(this.envelope.input);
         
+        // velocity gain
+        this.velocityGain = context.createGain();
+        this.envelope.connect(this.velocityGain);
+        
         // main gain
         this.output = context.createGain();
-        this.envelope.connect(this.output);
+        this.velocityGain.connect(this.output);
         
         // lfo
         /*
@@ -95,8 +99,8 @@ sai.Voice = class Voice extends sai.BaseNode {
         */
         
         this.attack = 0.1;
-        this.decay = 0.1;
-        this.sustain = 0.1;
+        this.decay = 0;
+        this.sustain = 1;
         this.release = 0.5;
     }
     start(when) {
@@ -163,6 +167,9 @@ sai.Voice = class Voice extends sai.BaseNode {
     set release(val) {
         this.envelope.release = val;
     }
+    get velocity() {
+        return this.velocityGain.gain;
+    }
 }
 
 sai.Track = class Track extends sai.BaseNode {
@@ -195,6 +202,7 @@ sai.Track = class Track extends sai.BaseNode {
             voice.osc2Type = this.osc2Type;
             voice.osc1Gain.value = this.osc1Gain;
             voice.osc2Gain.value = this.osc2Gain;
+            voice.velocity.value = message.velocity / 127;
             voice.connect(this._mixer);
             voice.start();
         } else if (message.cmd === sai.MidiMessage.commands.noteOff) {
