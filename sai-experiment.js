@@ -48,7 +48,7 @@ sai.BaseNode = class BaseNode {
 sai.Voice = class Voice extends sai.BaseNode {
     constructor(context) {
         super(context);
-        this._note = 69;
+        this._frequency = 440;
         this._detune = 0;
         
         // oscillator 1
@@ -118,26 +118,16 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.osc2.stop(t);
         //this.lfo.stop(t);
     }
-    get note() {
-        return this._note;
+    get frequency() {
+        return this._frequency;
     }
-    set note(val) {
-        this._note = val;
-        this._updateFrequency();
-    }
-    // detune : 1 = 1 semi-tone
-    get detune() {
-        return this._detune;
-    }
-    set detune(val) {
-        this._detune = val;
+    set frequency(val) {
+        this._frequency = val;
         this._updateFrequency();
     }
     _updateFrequency() {
-        var base = midiToFrequency(this.note);
-        var val = base * Math.pow(Math.pow(2, 1/12), this.detune);
-        this.osc1.frequency.value = val;
-        this.osc2.frequency.value = val;
+        this.osc1.frequency.value = this.frequency;
+        this.osc2.frequency.value = this.frequency;
     }
     get osc1Type() {
         return this.osc1.type;
@@ -229,13 +219,12 @@ sai.Track = class Track extends sai.BaseNode {
         var voice = new sai.Voice(this.context);
         this._voices[message.note] = voice;
         delete this._sustained[message.note];
-        voice.note = message.note;
+        voice.frequency = midiToFrequency(message.note + (this._pitchBend * this._pitchBendMaxAmount));
         voice.osc1Type = this.osc1Type;
         voice.osc2Type = this.osc2Type;
         voice.osc1Gain.value = this.osc1Gain;
         voice.osc2Gain.value = this.osc2Gain;
         voice.velocity.value = message.velocity / 127;
-        voice.detune = this._pitchBend * this._pitchBendMaxAmount;
         voice.connect(this._mixer);
         voice.start();
     }
@@ -266,7 +255,8 @@ sai.Track = class Track extends sai.BaseNode {
     _pitchBendChange(message) {
         var max = Math.pow(2, 14) - 1;
         this._pitchBend = Math.round((((message.pitchBend / max) * 2) - 1) * 1000) / 1000;
-        _.each(this._voices, (v) => v.detune = this._pitchBend * this._pitchBendMaxAmount);
+        _.each(this._voices, (v, k) =>
+            v.frequency = midiToFrequency(parseInt(k) + (this._pitchBend * this._pitchBendMaxAmount)));
     }
     get osc1Type() {
         return this._osc1Type;
