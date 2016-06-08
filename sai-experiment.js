@@ -252,7 +252,7 @@ sai.Track = class Track extends sai.BaseNode {
     }
     set osc1Gain(val) {
         this._osc1Gain = val;
-        _.each(this._voices, (v) => v.osc1Gain = val);
+        _.each(this._voices, (v) => v.osc1Gain.value = val);
     }
     get osc2Type() {
         return this._osc2Type;
@@ -266,7 +266,7 @@ sai.Track = class Track extends sai.BaseNode {
     }
     set osc2Gain(val) {
         this._osc2Gain = val;
-        _.each(this._voices, (v) => v.osc2Gain = val);
+        _.each(this._voices, (v) => v.osc2Gain.value = val);
     }
     get gain() {
         return this.output.gain.value;
