@@ -63,8 +63,10 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.osc2.connect(this.oscMixer);
         
         // filter
-        //this.filter = context.createBiquadFilter();
-        //this.oscMixer.connect(this.filter);
+        /*
+        this.filter = context.createBiquadFilter();
+        this.oscMixer.connect(this.filter);
+        */
         
         // envelope gain
         this._envelope = new sai.Envelope(this.context);
@@ -80,19 +82,20 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.velocityGain.connect(this.output);
         
         // lfo
-        /*
         this.lfo = new sai.Oscillator(context);
+        this.lfo.frequency.value = 1;
         
-        this.lfoOsc1Gain = context.createGain();
-        this.lfoOsc1Gain.gain.value = 0;
-        this.lfo.connect(this.lfoOsc1Gain);
-        this.lfoOsc1Gain.connect(this.osc1.frequencyParam);
+        this._lfoOsc1Gain = context.createGain();
+        this._lfoOsc1Gain.gain.value = 0;
+        this.lfo.connect(this._lfoOsc1Gain);
+        this._lfoOsc1Gain.connect(this.osc1.frequency);
         
-        this.lfoOsc2Gain = context.createGain();
-        this.lfoOsc2Gain.gain.value = 0;
-        this.lfo.connect(this.lfoOsc2Gain);
-        this.lfoOsc2Gain.connect(this.osc2.frequencyParam);
+        this._lfoOsc2Gain = context.createGain();
+        this._lfoOsc2Gain.gain.value = 0;
+        this.lfo.connect(this._lfoOsc2Gain);
+        this._lfoOsc2Gain.connect(this.osc2.frequency);
         
+        /*
         this.lfoFilterGain = context.createGain();
         this.lfoFilterGain.gain.value = 0;
         this.lfo.connect(this.lfoFilterGain);
@@ -104,14 +107,14 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.envelope.start(when);
         this.osc1.start(when);
         this.osc2.start(when);
-        //this.lfo.start(when);
+        this.lfo.start(when);
     }
     stop(when) {
         when = when || this.context.currentTime;
         var t = this.envelope.stop(when);
         this.osc1.stop(t);
         this.osc2.stop(t);
-        //this.lfo.stop(t);
+        this.lfo.stop(t);
     }
     get frequency() {
         return this._frequency;
@@ -148,6 +151,15 @@ sai.Voice = class Voice extends sai.BaseNode {
     get velocity() {
         return this.velocityGain.gain;
     }
+    get lfoFrequency() {
+        return this.lfo.frequency;
+    }
+    get lfoOsc1Gain() {
+        return this._lfoOsc1Gain.gain;
+    }
+    get lfoOsc2Gain() {
+        return this._lfoOsc2Gain.gain;
+    }
 }
 
 sai.Track = class Track extends sai.BaseNode {
@@ -156,12 +168,10 @@ sai.Track = class Track extends sai.BaseNode {
         
         this._mixer = context.createGain();
         
-        this._voices = {};
+        this._voices = new Map();
         
         this.output = this.context.createGain();
         this._mixer.connect(this.output);
-        
-        this._voices = {};
         
         this.osc1Type = "sine";
         this.osc1Gain = 1;
@@ -169,13 +179,16 @@ sai.Track = class Track extends sai.BaseNode {
         this.osc2Gain = 1;
         this.gain = 0.5;
         this._sustainOn = false;
-        this._sustained = {};
+        this._sustained = new Map();
         this._pitchBend = 0;
         this._pitchBendMaxAmount = 2;
         this._attack = 0.1;
         this._decay = 0.1;
         this._sustain = 0.5;
         this._release = 0.1;
+        this._lfoFrequency = 1;
+        this._lfoOsc1Gain = 0;
+        this._lfoOsc2Gain = 0;
     }
     midiMessage(message) {
         if (message.cmd === sai.MidiMessage.commands.noteOn) {
@@ -191,12 +204,12 @@ sai.Track = class Track extends sai.BaseNode {
         }
     }
     _noteOn(message) {
-        if (this._voices[message.note]) {
+        if (this._voices.get(message.note)) {
             this._noteOff(message, true);
         }
         var voice = new sai.Voice(this.context);
-        this._voices[message.note] = voice;
-        delete this._sustained[message.note];
+        this._voices.set(message.note, voice);
+        this._sustained.delete(message.note);
         voice.frequency = midiToFrequency(message.note + (this._pitchBend * this._pitchBendMaxAmount));
         voice.osc1Type = this.osc1Type;
         voice.osc2Type = this.osc2Type;
@@ -207,37 +220,40 @@ sai.Track = class Track extends sai.BaseNode {
         voice.envelope.decay = this.decay;
         voice.envelope.sustain = this.sustain;
         voice.envelope.release = this.release;
+        voice.lfoFrequency.value = this.lfoFrequency;
+        voice.lfoOsc1Gain.value = this.lfoOsc1Gain;
+        voice.lfoOsc2Gain.value = this.lfoOsc2Gain;
         voice.connect(this._mixer);
         voice.start();
     }
     _noteOff(message, force) {
-        if (! this._voices[message.note])
+        if (! this._voices.get(message.note))
             return;
         if (! this._sustainOn || force) {
-            var voice = this._voices[message.note];
+            var voice = this._voices.get(message.note);
             voice.stop();
-            delete this._voices[message.note];
+            this._voices.delete(message.note);
         } else {
-            this._sustained[message.note] = true;
+            this._sustained.set(message.note, true);
         }
     }
     _sustainChange(message) {
         this._sustainOn = message.velocity === 0 ? false : true;
         if (! this._sustainOn) {
-            _.each(this._sustained, function(val, key) {
-                if (this._voices[key]) {
+            this._sustained.forEach(function(val, key) {
+                if (this._voices.get(key)) {
                     var mes = new sai.MidiMessage();
                     mes.note = key;
                     this._noteOff(mes);
                 }
             }.bind(this));
-            this._sustained = {};
+            this._sustained = new Map();
         }
     }
     _pitchBendChange(message) {
         var max = Math.pow(2, 14) - 1;
         this._pitchBend = Math.round((((message.pitchBend / max) * 2) - 1) * 1000) / 1000;
-        _.each(this._voices, (v, k) =>
+        this._voices.forEach((v, k) =>
             v.frequency = midiToFrequency(parseInt(k) + (this._pitchBend * this._pitchBendMaxAmount)));
     }
     get osc1Type() {
@@ -245,28 +261,28 @@ sai.Track = class Track extends sai.BaseNode {
     }
     set osc1Type(val) {
         this._osc1Type = val;
-        _.each(this._voices, (v) => v.osc1Type = val);
+        this._voices.forEach((v) => v.osc1Type = val);
     }
     get osc1Gain() {
         return this._osc1Gain;
     }
     set osc1Gain(val) {
         this._osc1Gain = val;
-        _.each(this._voices, (v) => v.osc1Gain.value = val);
+        this._voices.forEach((v) => v.osc1Gain.value = val);
     }
     get osc2Type() {
         return this._osc2Type;
     }
     set osc2Type(val) {
         this._osc2Type = val;
-        _.each(this._voices, (v) => v.osc2Type = val);
+        this._voices.forEach((v) => v.osc2Type = val);
     }
     get osc2Gain() {
         return this._osc2Gain;
     }
     set osc2Gain(val) {
         this._osc2Gain = val;
-        _.each(this._voices, (v) => v.osc2Gain.value = val);
+        this._voices.forEach((v) => v.osc2Gain.value = val);
     }
     get gain() {
         return this.output.gain.value;
@@ -297,6 +313,27 @@ sai.Track = class Track extends sai.BaseNode {
     }
     set release(val) {
         this._release = val;
+    }
+    get lfoFrequency() {
+        return this._lfoFrequency;
+    }
+    set lfoFrequency(val) {
+        this._lfoFrequency = val;
+        this._voices.forEach((v) => v.lfoFrequency.value = val);
+    }
+    get lfoOsc1Gain() {
+        return this._lfoOsc1Gain;
+    }
+    set lfoOsc1Gain(val) {
+        this._lfoOsc1Gain = val;
+        this._voices.forEach((v) => v.lfoOsc1Gain.value = val);
+    }
+    get lfoOsc2Gain() {
+        return this._lfoOsc2Gain;
+    }
+    set lfoOsc2Gain(val) {
+        this._lfoOsc2Gain = val;
+        this._voices.forEach((v) => v.lfoOsc2Gain.value = val);
     }
 }
 
