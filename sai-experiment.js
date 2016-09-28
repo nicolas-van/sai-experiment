@@ -174,9 +174,9 @@ sai.Track = class Track extends sai.BaseNode {
         this._mixer.connect(this.output);
         
         this.osc1Type = "sine";
-        this.osc1Gain = 1;
+        this.osc1Gain = 0.25;
         this.osc2Type = "sine";
-        this.osc2Gain = 1;
+        this.osc2Gain = 0.25;
         this.gain = 0.5;
         this._sustainOn = false;
         this._sustained = new Map();
