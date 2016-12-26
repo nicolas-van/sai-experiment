@@ -63,15 +63,12 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.osc2.connect(this.oscMixer);
         
         // filter
-        /*
-        this.filter = context.createBiquadFilter();
-        this.oscMixer.connect(this.filter);
-        */
+        this._filter = context.createBiquadFilter();
+        this.oscMixer.connect(this._filter);
         
         // envelope gain
         this._envelope = new sai.Envelope(this.context);
-        //this.filter.connect(this.envelope);
-        this.oscMixer.connect(this.envelope.input);
+        this._filter.connect(this.envelope.input);
         
         // velocity gain
         this.velocityGain = context.createGain();
@@ -95,12 +92,10 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.lfo.connect(this._lfoOsc2Gain);
         this._lfoOsc2Gain.connect(this.osc2.frequency);
         
-        /*
-        this.lfoFilterGain = context.createGain();
-        this.lfoFilterGain.gain.value = 0;
-        this.lfo.connect(this.lfoFilterGain);
-        this.lfoFilterGain.connect(this.filter.frequency);
-        */
+        this._lfoFilterGain = context.createGain();
+        this._lfoFilterGain.gain.value = 0;
+        this.lfo.connect(this._lfoFilterGain);
+        this._lfoFilterGain.connect(this._filter.frequency);
     }
     start(when) {
         when = when || this.context.currentTime;
@@ -126,6 +121,7 @@ sai.Voice = class Voice extends sai.BaseNode {
     _updateFrequency() {
         this.osc1.frequency.value = this.frequency;
         this.osc2.frequency.value = this.frequency;
+        this._filter.frequency.value = this.frequency;
     }
     get osc1Type() {
         return this.osc1.type;
@@ -160,6 +156,21 @@ sai.Voice = class Voice extends sai.BaseNode {
     get lfoOsc2Gain() {
         return this._lfoOsc2Gain.gain;
     }
+    get filterType() {
+        return this._filter.type;
+    }
+    set filterType(val) {
+        this._filter.type = val;
+    }
+    get filterDetune() {
+        return this._filter.detune;
+    }
+    get filterQ() {
+        return this._filter.Q;
+    }
+    get filterGain() {
+        return this._filter.gain;
+    }
 }
 
 sai.Track = class Track extends sai.BaseNode {
@@ -189,6 +200,10 @@ sai.Track = class Track extends sai.BaseNode {
         this._lfoFrequency = 1;
         this._lfoOsc1Gain = 0;
         this._lfoOsc2Gain = 0;
+        this._filterType = "highpass";
+        this._filterDetune = 0;
+        this._filterQ = 1;
+        this._filterGain = 0;
     }
     midiMessage(message) {
         if (message.cmd === sai.MidiMessage.commands.noteOn) {
@@ -223,6 +238,10 @@ sai.Track = class Track extends sai.BaseNode {
         voice.lfoFrequency.value = this.lfoFrequency;
         voice.lfoOsc1Gain.value = this.lfoOsc1Gain;
         voice.lfoOsc2Gain.value = this.lfoOsc2Gain;
+        voice.filterType = this.filterType;
+        voice.filterDetune.value = this.filterDetune;
+        voice.filterQ.value = this.filterQ;
+        voice.filterGain.value = this.filterGain;
         voice.connect(this._mixer);
         voice.start();
     }
@@ -334,6 +353,34 @@ sai.Track = class Track extends sai.BaseNode {
     set lfoOsc2Gain(val) {
         this._lfoOsc2Gain = val;
         this._voices.forEach((v) => v.lfoOsc2Gain.value = val);
+    }
+    get filterType() {
+        return this._filterType;
+    }
+    set filterType(val) {
+        this._filterType = val;
+        this._voices.forEach((v) => v.filterType = val);
+    }
+    get filterDetune() {
+        return this._filterDetune;
+    }
+    set filterDetune(val) {
+        this._filterDetune = val;
+        this._voices.forEach((v) => v.filterDetune.value = val);
+    }
+    get filterQ() {
+        return this._filterQ;
+    }
+    set filterQ(val) {
+        this._filterQ = val;
+        this._voices.forEach((v) => v.filterQ.value = val);
+    }
+    get filterGain() {
+        return this._filterGain;
+    }
+    set filterGain(val) {
+        this._filterGain = val;
+        this._voices.forEach((v) => v.filterGain.value = val);
     }
 }
 
