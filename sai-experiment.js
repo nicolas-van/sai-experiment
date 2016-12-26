@@ -79,22 +79,26 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.velocityGain.connect(this.output);
         
         // lfo
-        this.lfo = new sai.Oscillator(context);
-        this.lfo.frequency.value = 1;
+        this._lfo = new sai.Oscillator(context);
+        this._lfo.frequency.value = 1;
+        
+        this._lfoGain = context.createGain();
+        this._lfoGain.gain.value = 0;
+        this._lfo.connect(this._lfoGain);
         
         this._lfoOsc1Gain = context.createGain();
         this._lfoOsc1Gain.gain.value = 0;
-        this.lfo.connect(this._lfoOsc1Gain);
+        this._lfoGain.connect(this._lfoOsc1Gain);
         this._lfoOsc1Gain.connect(this.osc1.frequency);
         
         this._lfoOsc2Gain = context.createGain();
         this._lfoOsc2Gain.gain.value = 0;
-        this.lfo.connect(this._lfoOsc2Gain);
+        this._lfoGain.connect(this._lfoOsc2Gain);
         this._lfoOsc2Gain.connect(this.osc2.frequency);
         
         this._lfoFilterGain = context.createGain();
         this._lfoFilterGain.gain.value = 0;
-        this.lfo.connect(this._lfoFilterGain);
+        this._lfoGain.connect(this._lfoFilterGain);
         this._lfoFilterGain.connect(this._filter.frequency);
     }
     start(when) {
@@ -102,14 +106,14 @@ sai.Voice = class Voice extends sai.BaseNode {
         this.envelope.start(when);
         this.osc1.start(when);
         this.osc2.start(when);
-        this.lfo.start(when);
+        this._lfo.start(when);
     }
     stop(when) {
         when = when || this.context.currentTime;
         var t = this.envelope.stop(when);
         this.osc1.stop(t);
         this.osc2.stop(t);
-        this.lfo.stop(t);
+        this._lfo.stop(t);
     }
     get frequency() {
         return this._frequency;
@@ -147,14 +151,26 @@ sai.Voice = class Voice extends sai.BaseNode {
     get velocity() {
         return this.velocityGain.gain;
     }
+    get lfoType() {
+        return this._lfo.type;
+    }
+    set lfoType(val) {
+        this._lfo.type = val;
+    }
     get lfoFrequency() {
-        return this.lfo.frequency;
+        return this._lfo.frequency;
+    }
+    get lfoGain() {
+        return this._lfoGain.gain;
     }
     get lfoOsc1Gain() {
         return this._lfoOsc1Gain.gain;
     }
     get lfoOsc2Gain() {
         return this._lfoOsc2Gain.gain;
+    }
+    get lfoFilterGain() {
+        return this._lfoFilterGain.gain;
     }
     get filterType() {
         return this._filter.type;
@@ -195,11 +211,14 @@ sai.Track = class Track extends sai.BaseNode {
         this._pitchBendMaxAmount = 2;
         this._attack = 0.1;
         this._decay = 0.1;
-        this._sustain = 0.5;
+        this._sustain = 1;
         this._release = 0.1;
+        this._lfoType = "sine";
         this._lfoFrequency = 1;
+        this._lfoGain = 0;
         this._lfoOsc1Gain = 0;
         this._lfoOsc2Gain = 0;
+        this._lfoFilterGain = 0;
         this._filterType = "highpass";
         this._filterDetune = 0;
         this._filterQ = 1;
@@ -235,9 +254,12 @@ sai.Track = class Track extends sai.BaseNode {
         voice.envelope.decay = this.decay;
         voice.envelope.sustain = this.sustain;
         voice.envelope.release = this.release;
+        voice.lfoType = this.lfoType;
         voice.lfoFrequency.value = this.lfoFrequency;
+        voice.lfoGain.value = this.lfoGain;
         voice.lfoOsc1Gain.value = this.lfoOsc1Gain;
         voice.lfoOsc2Gain.value = this.lfoOsc2Gain;
+        voice.lfoFilterGain.value = this.lfoFilterGain;
         voice.filterType = this.filterType;
         voice.filterDetune.value = this.filterDetune;
         voice.filterQ.value = this.filterQ;
@@ -333,12 +355,26 @@ sai.Track = class Track extends sai.BaseNode {
     set release(val) {
         this._release = val;
     }
+    get lfoType() {
+        return this._lfoType;
+    }
+    set lfoType(val) {
+        this._lfoType = val;
+        this._voices.forEach((v) => v.lfoType = val);
+    }
     get lfoFrequency() {
         return this._lfoFrequency;
     }
     set lfoFrequency(val) {
         this._lfoFrequency = val;
         this._voices.forEach((v) => v.lfoFrequency.value = val);
+    }
+    get lfoGain() {
+        return this._lfoGain;
+    }
+    set lfoGain(val) {
+        this._lfoGain = val;
+        this._voices.forEach((v) => v.lfoGain.value = val);
     }
     get lfoOsc1Gain() {
         return this._lfoOsc1Gain;
@@ -353,6 +389,13 @@ sai.Track = class Track extends sai.BaseNode {
     set lfoOsc2Gain(val) {
         this._lfoOsc2Gain = val;
         this._voices.forEach((v) => v.lfoOsc2Gain.value = val);
+    }
+    get lfoFilterGain() {
+        return this._lfoFilterGain;
+    }
+    set lfoFilterGain(val) {
+        this._lfoFilterGain = val;
+        this._voices.forEach((v) => v.lfoFilterGain.value = val);
     }
     get filterType() {
         return this._filterType;
