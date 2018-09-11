@@ -17,11 +17,15 @@ module.exports = {
     rules: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-        }
+        exclude: /(node_modules)/,
+        use: [
+          'babel-loader',
+          'eslint-loader',
+        ]
       }
     ],
   },
+  externals: [
+    'lodash',
+  ],
 };

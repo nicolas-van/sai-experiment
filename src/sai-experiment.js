@@ -1,8 +1,9 @@
 
+import _ from 'lodash';
 
 function midiToFrequency(midiNote) {
     return 440 * Math.pow(Math.pow(2, 1/12), midiNote - 69);
-};
+}
 
 export function wait(context, callback, when) {
     var test = function() {
@@ -14,7 +15,7 @@ export function wait(context, callback, when) {
         }
     };
     test();
-};
+}
 
 var offCtx = new OfflineAudioContext(1, 44100, 44100);
 var noiseBuffer = offCtx.createBuffer(1, 44100, 44100);
@@ -327,7 +328,7 @@ export class Track extends BaseNode {
         this.output.gain.value = val;
     }
     get attack() {
-        return this._attack;;
+        return this._attack;
     }
     set attack(val) {
         this._attack = val;
@@ -504,11 +505,11 @@ export class Envelope extends BaseNode {
         var value;
         var rt = t - this._startTime;
         if (rt < this.attack) {
-            var value = Math.max(0, rt / this.attack);
+            value = Math.max(0, rt / this.attack);
         } else if (rt >= this.attack && rt < this.attack + this.decay) {
-            var value = 1 - (((rt - this.attack) / (this.decay)) * (1 - this.sustain));
+            value = 1 - (((rt - this.attack) / (this.decay)) * (1 - this.sustain));
         } else {
-            var value = this.sustain;
+            value = this.sustain;
         }
         this.input.gain.setValueAtTime(value, t);
         t += this.release;
