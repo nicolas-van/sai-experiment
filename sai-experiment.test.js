@@ -1,6 +1,6 @@
 
-require('web-audio-test-api');
-var sai = require('./dist/sai-experiment.bundle.js');
+import 'web-audio-test-api';
+import * as sai from './src/sai-experiment.js';
 
 test('exports', () => {
   expect(sai.wait).toBeDefined();
