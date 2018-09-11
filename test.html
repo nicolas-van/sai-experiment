@@ -4,10 +4,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="sai-experiment.js"></script>
+    <script src="dist/sai-experiment.bundle.js"></script>
     <script>
-    $(function() {
+    (function() {
+        var sai = window['sai-experiment'];
         var audioCtx = new AudioContext();
         var instrument = {
             oscillators: [
@@ -54,34 +54,12 @@
             }
         });
         
-        var notes = {};
-        
-        var receiveMessage = function(message) {
+        var receiveMessage = function(data) {
+            var message = new sai.MidiMessage(message);
             console.log(message);
-            var data = message.data;
-            var info = {
-                cmd: data[0] >> 4,
-                channel: data[0] & 0xf,
-                type: data[0] & 0xf0,
-                note: data[1],
-                velocity: data[2],
-            };
-            
-            if (info.type === 144) {
-                if (notes[info.note]) {
-                    info.note.end();
-                }
-                notes[info.note] = t.playNote(info.note, null, false);
-            } else if (info.type === 128) {
-                if (notes[info.note]) {
-                    notes[info.note].end();
-                    notes[info.note] = undefined;
-                }
-            }
+            t.midiMessage(message);
         };
-        
-        var x = `hello`;
-    });
+    })();
     </script>
 </head>
 <body>

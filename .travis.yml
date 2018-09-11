@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+- node
+before_deploy:
+- npm run build
+deploy:
+  provider: npm
+  skip_cleanup: true
+  email: nicolas.vanhoren@gmail.com
+  api_key:
+    secure: QDRQQMwmWDqKW029ngP6skaJSTLiBbfXPsAgsuM96b+W0OOkxhZBJbTHRUo0uVxlz2Yast4mEW9aeuT8DVarXNTkRPay4exQY64NAKl2ICdAWzapfTTTRSxWS30/YvbW9c7srmII4GAUVV4n/wb8ETDIiqmi/t+/BhbeNcDI4pZdiA5QslVS8Doab2WtdNb9gA4QpWjb/OxFF1TowY2UGH2+FM9MOWsHLkmqbA17ZC7qxs4W70fUDqqnYrdFuqwdA15MBh7BDqtjkKtDJi7a2ByuV8+RI+QfQSQTE91t2kAXNvDB5dEe9fiMAebBnuob+rqLccIHJJiN1+4Ms86EIVQtmuDAXwMmacrkb5eqxkukB+RF+z1JMD9w/af1YEYA9erqvMTUYcrSdSmGdWkDh4IPklFe7Pkxsvg95/PqS2D1ik4hbygLA5P+DHPvP8ZWyOLFLJjkqcV4blkdbxcm9MSlaSI0feeQjm/u63fGKBz9rL9OPLuqzHKs5kMxPbAhuIT1o8sbhfWFyo5Tko4wnEEGff0oxqCksL3IlKTaXr182fHBrL+XvcaNKpbVdb8tL4LpaHgjrNmcv7rFilDE9sUBIhN7gB13YzNzzfsyRqEweH237q3DWLrQS4SFsnr/q/wWMBo+PcgmDPl95pxqTDmZhx136YQvfCTcf8xXCi4=
+  on:
+    tags: true
+    repo: nicolas-van/sai-experiment
+    branch: master
