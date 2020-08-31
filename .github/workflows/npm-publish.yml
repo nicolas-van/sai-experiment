@@ -15,8 +15,6 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 12
-      - run: sudo apt install gfortran
-      - run: cd reference && make && cd ..
       - run: npm ci
       - run: npm test
       - run: npm run build
