@@ -5,7 +5,7 @@
   "main": "dist/sai-experiment.cjs.js",
   "module": "dist/sai-experiment.es.js",
   "scripts": {
-    "test": "npm run lint && npm run jest",
+    "test": "npm run lint",
     "lint": "eslint \"*.js\" \"src/**/*.js\" \"demo/**/*.js\"",
     "jest": "jest",
     "build": "npm run rollup",
