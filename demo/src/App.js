@@ -81,7 +81,8 @@ export default class App extends React.PureComponent {
         }}></Knob>
       </div>
       <div>
-        <PianoRoll style={{ height: 100, width: '100%' }}/>
+        <PianoRoll style={{ height: 100, width: '100%' }}
+          whiteKeyColor="var(--blue)" blackKeyColor="#1e7298" nbrKeys={(12 * 3) + 1}/>
       </div>
     </div>
   }

@@ -29,7 +29,7 @@ for (let i = 0; i <= 127; i += 1) {
 
 export default class MidiMessage {
   constructor (data) {
-    this.data = data ? this.data : new Uint8Array(3)
+    this.data = data || new Uint8Array(3)
   }
 
   static midiNoteToName (nbr) {

@@ -21,23 +21,18 @@ const init = function (el, {
   // draw white keys first
   const whites = _.range(firstNote, firstNote + nbrKeys).filter(el => !isBlack(el))
   const whiteWidth = 1 / whites.length
+  const whiteXMargin = whiteWidth * 0.2
+  const whiteTopMargin = 0.2
 
   whites.forEach((white, nbr) => {
-    if (nbr !== 0) {
-      svg.append('line')
-        .attr('x1', `${nbr * whiteWidth * 100}%`)
-        .attr('y1', 0)
-        .attr('x2', `${nbr * whiteWidth * 100}%`)
-        .attr('y2', '100%')
-        .attr('stroke', '#000')
-        .attr('stroke-width', 2)
-    }
     svg.append('rect')
-      .attr('x', `${nbr * whiteWidth * 100}%`)
-      .attr('y', 0)
-      .attr('width', `${whiteWidth * 100}%`)
-      .attr('heigth', '100%')
+      .attr('x', `${((nbr * whiteWidth) + whiteXMargin) * 100}%`)
+      .attr('y', `${whiteTopMargin * 100}%`)
+      .attr('width', `${(whiteWidth - (2 * whiteXMargin)) * 100}%`)
+      .attr('height', `${(1 - whiteTopMargin) * 100}%`)
       .attr('fill', whiteKeyColor)
+      .attr('rx', '10px')
+      .attr('ry', '10px')
   })
 
   const blacks = _.range(firstNote, firstNote + nbrKeys).filter(el => isBlack(el))
@@ -52,7 +47,12 @@ const init = function (el, {
       .attr('width', `${blackWidth * 100}%`)
       .attr('height', '60%')
       .attr('fill', blackKeyColor)
+      .attr('rx', '10px')
+      .attr('ry', '10px')
   })
+
+  svg.node().coordsToNote = (x, y) => {
+  }
 
   el.update = update
   el.update({
@@ -172,10 +172,10 @@ PianoRoll.propTypes = {
 }
 
 PianoRoll.defaultProps = {
-  firstNote: MidiMessage.nameToMidiNote('C1'),
-  nbrKeys: (12 * 5) + 1,
-  whiteKeyColor: '#FFF',
-  blackKeyColor: '#000',
+  firstNote: MidiMessage.nameToMidiNote('C2'),
+  nbrKeys: (12 * 3) + 1,
+  whiteKeyColor: '#adafae',
+  blackKeyColor: '#2a9fd6',
   pressedWhiteKeyColor: '#999',
   pressedBlackKeyColor: '#444'
 }
