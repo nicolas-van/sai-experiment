@@ -9,7 +9,7 @@ import 'bootstrap'
 // import font awesome fonts
 import '@fortawesome/fontawesome-free/css/all.css'
 
-import * as sai from '../src/sai-experiment'
+import * as sai from '../../src/sai-experiment'
 
 console.log('loading track')
 
