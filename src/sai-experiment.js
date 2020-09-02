@@ -1,10 +1,9 @@
 /* eslint-disable require-jsdoc */
 
 import _ from 'lodash'
+import MidiMessage from './MidiMessage'
 
-function midiToFrequency (midiNote) {
-  return 440 * Math.pow(Math.pow(2, 1 / 12), midiNote - 69)
-}
+export { MidiMessage }
 
 export function wait (context, callback, when) {
   const test = function () {
@@ -271,7 +270,7 @@ export class Track extends BaseNode {
     const voice = new Voice(this.context)
     this._voices.set(message.note, voice)
     this._sustained.delete(message.note)
-    voice.frequency = midiToFrequency(message.note + (this._pitchBend * this._pitchBendMaxAmount))
+    voice.frequency = MidiMessage.midiToFrequency(message.note + (this._pitchBend * this._pitchBendMaxAmount))
     voice.osc1Type = this.osc1Type
     voice.osc2Type = this.osc2Type
     voice.osc1Gain.value = this.osc1Gain
@@ -324,7 +323,7 @@ export class Track extends BaseNode {
     const max = Math.pow(2, 14) - 1
     this._pitchBend = Math.round((((message.pitchBend / max) * 2) - 1) * 1000) / 1000
     this._voices.forEach((v, k) => {
-      v.frequency = midiToFrequency(parseInt(k) + (this._pitchBend * this._pitchBendMaxAmount))
+      v.frequency = MidiMessage.midiToFrequency(parseInt(k) + (this._pitchBend * this._pitchBendMaxAmount))
     })
   }
 
@@ -624,73 +623,4 @@ export class Envelope extends BaseNode {
     this.input.gain.linearRampToValueAtTime(0, t)
     return t
   }
-}
-
-export class MidiMessage {
-  constructor (data) {
-    this.data = data
-    if (!data) { this.data = new Uint8Array(3) }
-  }
-
-  get cmd () {
-    return this.data[0] >> 4
-  }
-
-  set cmd (val) {
-    this.data[0] = (val << 4) | (this.data[0] & 0xf0)
-  }
-
-  get cmdString () {
-    return _.findKey(MidiMessage.commands, (x) => x === this.cmd)
-  }
-
-  get channel () {
-    return this.data[0] & 0x0f
-  }
-
-  set channel (val) {
-    this.data[0] = (val & 0x0f) | (this.data[0] & 0xf0)
-  }
-
-  get type () {
-    return this.data[0] & 0xf0
-  }
-
-  set type (val) {
-    this.data[0] = (val & 0xf0) | (this.data[0] & 0x0f)
-  }
-
-  get note () {
-    return this.data[1]
-  }
-
-  set note (val) {
-    this.data[1] = val
-  }
-
-  get velocity () {
-    return this.data[2]
-  }
-
-  set velocity (val) {
-    this.data[2] = val
-  }
-
-  get pitchBend () {
-    return (this.data[2] << 7) + (this.data[1])
-  }
-}
-
-MidiMessage.commands = {
-  noteOff: 0x8,
-  noteOn: 0x9,
-  polyphonicKeyPressure: 0xA,
-  controlChange: 0xB,
-  programChange: 0xC,
-  channelPressure: 0xD,
-  pitchBendChange: 0xE
-}
-
-MidiMessage.controls = {
-  sustain: 64
 }

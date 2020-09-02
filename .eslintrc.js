@@ -7,7 +7,8 @@ module.exports = {
     'jest/globals': true
   },
   extends: [
-    'standard'
+    'standard',
+    'plugin:react/recommended'
     /*
     'plugin:jsdoc/recommended'
     */
@@ -18,10 +19,14 @@ module.exports = {
   },
   parserOptions: {
     ecmaVersion: 2018,
-    sourceType: 'module'
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true
+    }
   },
   plugins: [
-    'jest'
+    'jest',
+    'react'
     /*
     'jsdoc'
     */
